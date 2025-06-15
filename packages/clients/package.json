@@ -1,0 +1,23 @@
+{
+    "name": "@vannatta-software/ts-infrastructure-clients",
+    "version": "1.0.0",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "scripts": {
+        "build": "tsc",
+        "test": "jest"
+    },
+    "dependencies": {
+        "@vannatta-software/ts-utils-server": "^2.5.1",
+        "@vannatta-software/ts-utils-core": "^2.5.1",
+        "@vannatta-software/ts-utils-domain": "^2.5.1"
+    },
+    "devDependencies": {
+        "@types/jest": "^29.5.14",
+        "jest": "^29.7.0",
+        "ts-jest": "^29.1.0"
+    },
+    "publishConfig": {
+        "access": "public"
+    }
+}

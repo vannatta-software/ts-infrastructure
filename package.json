@@ -1,0 +1,21 @@
+{
+  "name": "ts-infrastructure-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Monorepo for TS-Infrastructure packages",
+  "main": "index.js",
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "test": "npm test --workspaces"
+  },
+  "workspaces": [
+    "packages/*"
+  ],
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+    "devDependencies": {
+        "lerna": "^8.2.2",
+        "typescript": "^5.2.2"
+    }
+}
