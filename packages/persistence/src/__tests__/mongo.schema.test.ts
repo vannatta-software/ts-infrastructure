@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'; // Add Vitest imports
 import { Schema } from 'mongoose';
 import 'reflect-metadata'; // Ensure this is at the very top
-import { Mongo } from '../mongo/mongo.schema';
+import { MongoSchema } from '../mongo/mongo.schema';
 import { DatabaseEntity, DatabaseSchema, DatabaseSchemaMetadataKey } from '../schema/database.schema';
 
 // Import new consolidated test entities
@@ -14,7 +14,7 @@ import { MyEnumeration } from './test-class/enumeration-base-class';
 
 describe('Mongo.Schema', () => {
     it('should create a basic Mongoose schema from a class with @DatabaseSchema', () => {
-        const schema = Mongo.Schema(BasicEntity);
+        const schema = MongoSchema.extract(BasicEntity);
         expect(schema).toBeInstanceOf(Schema);
         expect((schema.obj.name as any).type).toBe(String);
         expect((schema.obj.age as any).type).toBe(Number);
@@ -22,7 +22,7 @@ describe('Mongo.Schema', () => {
     });
 
     it('should handle UniqueIdentifier properties and map to _id for Entity', () => {
-        const schema = Mongo.Schema(BasicEntity);
+        const schema = MongoSchema.extract(BasicEntity);
         // Test individual properties to avoid deep equality issues with Schema instance
         expect(schema.obj._id).toEqual({ type: String, default: expect.any(Function) });
         expect(schema.obj.name).toEqual({ type: String });
@@ -57,13 +57,13 @@ describe('Mongo.Schema', () => {
             ignoredProp: string; // Not decorated, should be ignored
         }
 
-        const schema = Mongo.Schema(TestClassWithIgnoredProp);
+        const schema = MongoSchema.extract(TestClassWithIgnoredProp);
         expect((schema.obj.name as any).type).toBe(String);
         expect(schema.obj).not.toHaveProperty('ignoredProp');
     });
 
     it('should handle array properties', () => {
-        const schema = Mongo.Schema(ArrayEntity);
+        const schema = MongoSchema.extract(ArrayEntity);
         expect(schema.obj.stringArray).toEqual([String]); // Reverted to standard [String]
         expect(schema.obj.numberArray).toEqual([Number]); // Reverted to standard [Number]
         expect(schema.obj.uniqueIdentifierArray).toEqual([String]); // Reverted to standard [String]
@@ -78,7 +78,7 @@ describe('Mongo.Schema', () => {
     });
 
     it('should handle embedded schemas', () => {
-        const schema = Mongo.Schema(BasicEntity);
+        const schema = MongoSchema.extract(BasicEntity);
         expect(schema).toBeInstanceOf(Schema);
         expect(schema.obj).toHaveProperty('embeddedObject');
         const embeddedSchema = schema.obj.embeddedObject;
@@ -91,7 +91,7 @@ describe('Mongo.Schema', () => {
     });
 
     it('should handle array of embedded schemas', () => {
-        const schema = Mongo.Schema(ArrayEntity);
+        const schema = MongoSchema.extract(ArrayEntity);
         expect(schema).toBeInstanceOf(Schema);
         expect(schema.obj).toHaveProperty('embeddedObjectArray');
         expect(schema.obj.embeddedObjectArray).toEqual([expect.any(Schema)]); // Updated expectation
@@ -106,7 +106,7 @@ describe('Mongo.Schema', () => {
     });
 
     it('should handle enumeration properties from concrete class', () => {
-        const schema = Mongo.Schema(BasicEntity);
+        const schema = MongoSchema.extract(BasicEntity);
         expect(schema).toBeInstanceOf(Schema);
         expect(schema.obj).toHaveProperty('status');
         const statusSchema = schema.obj.status;
@@ -114,7 +114,7 @@ describe('Mongo.Schema', () => {
     });
 
     it('should handle enumeration properties from Enumeration base class', () => {
-        const schema = Mongo.Schema(MyEnumeration);
+        const schema = MongoSchema.extract(MyEnumeration);
         expect(schema).toBeInstanceOf(Schema);
         expect(schema.obj).toHaveProperty('id');
         expect(schema.obj).toHaveProperty('name');
@@ -124,7 +124,7 @@ describe('Mongo.Schema', () => {
     });
 
     it('should handle string literal enum properties (explicit enum array still required)', () => {
-        const schema = Mongo.Schema(BasicEntity);
+        const schema = MongoSchema.extract(BasicEntity);
         expect(schema.obj).toEqual(
             expect.objectContaining({
                 literalStatus: { type: String, enum: ['LITERAL_A', 'LITERAL_B'] },
@@ -133,14 +133,14 @@ describe('Mongo.Schema', () => {
     });
 
     it('should return empty schema for null/undefined targetClass', () => {
-        const schema = Mongo.Schema(null);
+        const schema = MongoSchema.extract(null);
         expect(schema).toBeInstanceOf(Schema);
         expect(schema.obj).toEqual({});
         expect((schema as any).options._id).toBe(false);
     });
 
     it('should limit recursion depth', () => {
-        const schemaAtDepth5 = Mongo.Schema(DeepEntity, 5);
+        const schemaAtDepth5 = MongoSchema.extract(DeepEntity, 5);
         expect(schemaAtDepth5).toBeInstanceOf(Schema);
         expect(schemaAtDepth5.obj).toHaveProperty('child');
         const nextSchemaAtDepth5 = (schemaAtDepth5.obj as any).child;
@@ -148,14 +148,14 @@ describe('Mongo.Schema', () => {
         expect(nextSchemaAtDepth5.obj).toEqual({});
         expect((nextSchemaAtDepth5 as any).options._id).toBe(false);
 
-        const schemaAtDepth6 = Mongo.Schema(DeepEntity, 6);
+        const schemaAtDepth6 = MongoSchema.extract(DeepEntity, 6);
         expect(schemaAtDepth6).toBeInstanceOf(Schema);
         expect(schemaAtDepth6.obj).toEqual({});
         expect((schemaAtDepth6 as any).options._id).toBe(false);
     });
 
     it('should correctly create a schema for ComplexUser with nested types and unique property, including inherited properties', () => {
-        const schema = Mongo.Schema(ComplexUserEntity);
+        const schema = MongoSchema.extract(ComplexUserEntity);
 
         expect(schema).toBeInstanceOf(Schema);
         expect(schema.obj).toBeDefined();
@@ -186,7 +186,7 @@ describe('Mongo.Schema', () => {
     });
 
     it('should handle inheritance correctly', () => {
-        const baseSchema = Mongo.Schema(BaseInheritanceEntity);
+        const baseSchema = MongoSchema.extract(BaseInheritanceEntity);
         expect(baseSchema.obj).toEqual(
             expect.objectContaining({
                 _id: { type: String, default: expect.any(Function) },
@@ -198,7 +198,7 @@ describe('Mongo.Schema', () => {
         );
         expect((baseSchema as any).options._id).toBe(true);
 
-        const derivedSchema = Mongo.Schema(DerivedInheritanceEntity);
+        const derivedSchema = MongoSchema.extract(DerivedInheritanceEntity);
         expect(derivedSchema.obj).toEqual(
             expect.objectContaining({
                 _id: { type: String, default: expect.any(Function) },
@@ -232,7 +232,7 @@ describe('Mongo.extractSchema', () => {
             embedded: embeddedSchema,
         });
 
-        const extracted = Mongo.extractSchema(testSchema);
+        const extracted = MongoSchema.extractProperties(testSchema);
         expect(extracted).toHaveProperty('name');
         expect(extracted).toHaveProperty('age');
         expect(extracted).toHaveProperty('embedded');
@@ -247,13 +247,13 @@ describe('Mongo.extractSchema', () => {
 
     it('should handle empty schema', () => {
         const emptySchema = new Schema({});
-        const extracted = Mongo.extractSchema(emptySchema);
+        const extracted = MongoSchema.extractProperties(emptySchema);
         expect(extracted).toEqual({});
     });
 
     it('should handle null/undefined schema', () => {
-        expect(Mongo.extractSchema(null as any)).toEqual({});
-        expect(Mongo.extractSchema(undefined as any)).toEqual({});
+        expect(MongoSchema.extractProperties(null as any)).toEqual({});
+        expect(MongoSchema.extractProperties(undefined as any)).toEqual({});
     });
 
     it('should handle schema with array of embedded schemas', () => {
@@ -264,7 +264,7 @@ describe('Mongo.extractSchema', () => {
             items: { type: [itemSchema] },
         });
 
-        const extracted = Mongo.extractSchema(listSchema);
+        const extracted = MongoSchema.extractProperties(listSchema);
         expect(extracted).toHaveProperty('items');
         expect((extracted.items as any)).toHaveProperty('type');
         expect(Array.isArray((extracted.items as any).type)).toBe(true);

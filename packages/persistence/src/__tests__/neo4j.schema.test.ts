@@ -11,7 +11,7 @@ import { MyEnumeration } from './test-class/enumeration-base-class';
 
 describe('Neo4jSchema.extractSchema', () => {
     it('should correctly extract schema for a basic entity with various basic properties', () => {
-        const schema = Neo4jSchema.extractSchema(BasicEntity);
+        const schema = Neo4jSchema.extract(BasicEntity);
 
         expect(schema.nodes).toHaveLength(1);
         const node = schema.nodes[0];
@@ -49,7 +49,7 @@ describe('Neo4jSchema.extractSchema', () => {
     });
 
     it('should correctly extract schema for an entity with an embedded ValueObject', () => {
-        const schema = Neo4jSchema.extractSchema(BasicEntity);
+        const schema = Neo4jSchema.extract(BasicEntity);
         const node = schema.nodes.find(n => n.label === 'BasicEntity');
 
         expect(node).toBeDefined();
@@ -58,7 +58,7 @@ describe('Neo4jSchema.extractSchema', () => {
     });
 
     it('should correctly extract schema for an entity with an enum property', () => {
-        const schema = Neo4jSchema.extractSchema(BasicEntity);
+        const schema = Neo4jSchema.extract(BasicEntity);
         const node = schema.nodes.find(n => n.label === 'BasicEntity');
 
         expect(node).toBeDefined();
@@ -74,7 +74,7 @@ describe('Neo4jSchema.extractSchema', () => {
     });
 
     it('should correctly extract schema for an entity with relationship properties', () => {
-        const schema = Neo4jSchema.extractSchema(ComplexUserEntity);
+        const schema = Neo4jSchema.extract(ComplexUserEntity);
         const userNode = schema.nodes.find(n => n.label === 'ComplexUserEntity');
 
         expect(userNode).toBeDefined();
@@ -96,7 +96,7 @@ describe('Neo4jSchema.extractSchema', () => {
     });
 
     it('should handle optional properties', () => {
-        const schema = Neo4jSchema.extractSchema(BasicEntity);
+        const schema = Neo4jSchema.extract(BasicEntity);
         const node = schema.nodes.find(n => n.label === 'BasicEntity');
 
         expect(node).toBeDefined();
@@ -106,7 +106,7 @@ describe('Neo4jSchema.extractSchema', () => {
     });
 
     it('should handle metadata property', () => {
-        const schema = Neo4jSchema.extractSchema(BasicEntity);
+        const schema = Neo4jSchema.extract(BasicEntity);
         const node = schema.nodes.find(n => n.label === 'BasicEntity');
 
         expect(node).toBeDefined();
@@ -116,7 +116,7 @@ describe('Neo4jSchema.extractSchema', () => {
     });
 
     it('should correctly extract schema for an entity with arrays of various types', () => {
-        const schema = Neo4jSchema.extractSchema(ArrayEntity);
+        const schema = Neo4jSchema.extract(ArrayEntity);
         const node = schema.nodes.find(n => n.label === 'ArrayEntity');
 
         expect(node).toBeDefined();
@@ -131,7 +131,7 @@ describe('Neo4jSchema.extractSchema', () => {
     });
 
     it('should handle inheritance for node properties', () => {
-        const schema = Neo4jSchema.extractSchema(DerivedInheritanceEntity);
+        const schema = Neo4jSchema.extract(DerivedInheritanceEntity);
         const node = schema.nodes.find(n => n.label === 'DerivedInheritanceEntity');
 
         expect(node).toBeDefined();
@@ -154,7 +154,7 @@ describe('Neo4jSchema.extractSchema', () => {
     });
 
     it('should correctly handle properties that are arrays of UniqueIdentifier', () => {
-        const schema = Neo4jSchema.extractSchema(ArrayEntity);
+        const schema = Neo4jSchema.extract(ArrayEntity);
         const node = schema.nodes.find(n => n.label === 'ArrayEntity');
 
         expect(node).toBeDefined();
@@ -163,7 +163,7 @@ describe('Neo4jSchema.extractSchema', () => {
     });
 
     it('should correctly handle properties that are arrays of embedded entities/value objects', () => {
-        const schema = Neo4jSchema.extractSchema(ArrayEntity);
+        const schema = Neo4jSchema.extract(ArrayEntity);
         const node = schema.nodes.find(n => n.label === 'ArrayEntity');
 
         expect(node).toBeDefined();
@@ -172,7 +172,7 @@ describe('Neo4jSchema.extractSchema', () => {
     });
 
     it('should correctly handle properties that are arrays of primitive types', () => {
-        const schema = Neo4jSchema.extractSchema(ArrayEntity);
+        const schema = Neo4jSchema.extract(ArrayEntity);
         const node = schema.nodes.find(n => n.label === 'ArrayEntity');
 
         expect(node).toBeDefined();
@@ -183,7 +183,7 @@ describe('Neo4jSchema.extractSchema', () => {
     });
 
     it('should correctly handle properties that are primitive types', () => {
-        const schema = Neo4jSchema.extractSchema(BasicEntity);
+        const schema = Neo4jSchema.extract(BasicEntity);
         const node = schema.nodes.find(n => n.label === 'BasicEntity');
 
         expect(node).toBeDefined();
@@ -198,7 +198,7 @@ describe('Neo4jSchema.extractSchema', () => {
     });
 
     it('should correctly handle properties that are UniqueIdentifier', () => {
-        const schema = Neo4jSchema.extractSchema(BasicEntity);
+        const schema = Neo4jSchema.extract(BasicEntity);
         const node = schema.nodes.find(n => n.label === 'BasicEntity');
 
         expect(node).toBeDefined();
@@ -218,7 +218,7 @@ describe('Neo4jSchema.extractSchema', () => {
         // If a specific recursion limit is needed for Neo4j, it would need to be implemented
         // within Neo4jSchema.extractSchema itself.
 
-        const schema = Neo4jSchema.extractSchema(DeepEntity);
+        const schema = Neo4jSchema.extract(DeepEntity);
         const node = schema.nodes.find(n => n.label === 'DeepEntity');
 
         expect(node).toBeDefined();
@@ -233,7 +233,7 @@ describe('Neo4jSchema.extractSchema', () => {
     });
 
     it('should correctly extract schema for PostEntity with embedded comments and tags', () => {
-        const schema = Neo4jSchema.extractSchema(PostEntity);
+        const schema = Neo4jSchema.extract(PostEntity);
         const postNode = schema.nodes.find(n => n.label === 'PostEntity');
 
         expect(postNode).toBeDefined();

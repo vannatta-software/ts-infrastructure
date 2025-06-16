@@ -13,7 +13,7 @@ import { MyEnumeration } from './test-class/enumeration-base-class';
 
 describe('PostgresSchema', () => {
     it('should create a basic TypeORM entity from a class with @DatabaseSchema', () => {
-        const TypeOrmEntitySchema = PostgresSchema.getTypeOrmEntity(BasicEntity);
+        const TypeOrmEntitySchema = PostgresSchema.extract(BasicEntity);
         expect(TypeOrmEntitySchema).toBeInstanceOf(EntitySchema);
         expect(TypeOrmEntitySchema.options.name).toBe('BasicEntity');
         expect(TypeOrmEntitySchema.options.target).toBe(BasicEntity);
@@ -25,7 +25,7 @@ describe('PostgresSchema', () => {
     });
 
     it('should handle UniqueIdentifier properties and map to id as PrimaryColumn for Entity', () => {
-        const TypeOrmEntitySchema = PostgresSchema.getTypeOrmEntity(BasicEntity);
+        const TypeOrmEntitySchema = PostgresSchema.extract(BasicEntity);
         expect(TypeOrmEntitySchema.options.name).toBe('BasicEntity');
         expect(TypeOrmEntitySchema.options.target).toBe(BasicEntity);
 
@@ -52,7 +52,7 @@ describe('PostgresSchema', () => {
     });
 
     it('should handle array properties', () => {
-        const TypeOrmEntitySchema = PostgresSchema.getTypeOrmEntity(ArrayEntity);
+        const TypeOrmEntitySchema = PostgresSchema.extract(ArrayEntity);
         expect(TypeOrmEntitySchema.options.name).toBe('ArrayEntity');
         expect(TypeOrmEntitySchema.options.target).toBe(ArrayEntity);
 
@@ -74,7 +74,7 @@ describe('PostgresSchema', () => {
     });
 
     it('should handle embedded schemas as jsonb', () => {
-        const TypeOrmEntitySchema = PostgresSchema.getTypeOrmEntity(BasicEntity);
+        const TypeOrmEntitySchema = PostgresSchema.extract(BasicEntity);
         expect(TypeOrmEntitySchema.options.name).toBe('BasicEntity');
         expect(TypeOrmEntitySchema.options.target).toBe(BasicEntity);
 
@@ -84,7 +84,7 @@ describe('PostgresSchema', () => {
     });
 
     it('should handle array of embedded schemas as jsonb', () => {
-        const TypeOrmEntitySchema = PostgresSchema.getTypeOrmEntity(ArrayEntity);
+        const TypeOrmEntitySchema = PostgresSchema.extract(ArrayEntity);
         expect(TypeOrmEntitySchema.options.name).toBe('ArrayEntity');
         expect(TypeOrmEntitySchema.options.target).toBe(ArrayEntity);
 
@@ -94,7 +94,7 @@ describe('PostgresSchema', () => {
     });
 
     it('should handle enumeration properties from concrete class (plain TS enum)', () => {
-        const TypeOrmEntitySchema = PostgresSchema.getTypeOrmEntity(BasicEntity);
+        const TypeOrmEntitySchema = PostgresSchema.extract(BasicEntity);
         expect(TypeOrmEntitySchema.options.name).toBe('BasicEntity');
         expect(TypeOrmEntitySchema.options.target).toBe(BasicEntity);
 
@@ -110,7 +110,7 @@ describe('PostgresSchema', () => {
     });
 
     it('should handle enumeration properties from Enumeration base class', () => {
-        const TypeOrmEntitySchema = PostgresSchema.getTypeOrmEntity(MyEnumeration);
+        const TypeOrmEntitySchema = PostgresSchema.extract(MyEnumeration);
         expect(TypeOrmEntitySchema.options.name).toBe('MyEnumeration');
         expect(TypeOrmEntitySchema.options.target).toBe(MyEnumeration);
 
@@ -126,7 +126,7 @@ describe('PostgresSchema', () => {
     });
 
     it('should handle string literal enum properties (explicit enum array still required)', () => {
-        const TypeOrmEntitySchema = PostgresSchema.getTypeOrmEntity(BasicEntity);
+        const TypeOrmEntitySchema = PostgresSchema.extract(BasicEntity);
         expect(TypeOrmEntitySchema.options.name).toBe('BasicEntity');
         expect(TypeOrmEntitySchema.options.target).toBe(BasicEntity);
 
@@ -137,27 +137,27 @@ describe('PostgresSchema', () => {
     });
 
     it('should return empty entity for null/undefined targetClass', () => {
-        const TypeOrmEntitySchema = PostgresSchema.getTypeOrmEntity(null as any);
+        const TypeOrmEntitySchema = PostgresSchema.extract(null as any);
         expect(TypeOrmEntitySchema).toBeInstanceOf(EntitySchema);
         expect(TypeOrmEntitySchema.options.name).toBe('EmptyEntity');
         expect(TypeOrmEntitySchema.options.columns).toEqual({});
     });
 
     it('should limit recursion depth', () => {
-        const TypeOrmEntitySchemaAtDepth5 = PostgresSchema.getTypeOrmEntity(DeepEntity, 5);
+        const TypeOrmEntitySchemaAtDepth5 = PostgresSchema.extract(DeepEntity, 5);
         expect(TypeOrmEntitySchemaAtDepth5.options.name).toBe('DeepEntity');
         expect(TypeOrmEntitySchemaAtDepth5.options.target).toBe(DeepEntity);
         const childColumnAtDepth5 = TypeOrmEntitySchemaAtDepth5.options.columns.child;
         expect(childColumnAtDepth5).toBeDefined();
         expect(childColumnAtDepth5.type).toBe('jsonb');
 
-        const TypeOrmEntitySchemaAtDepth6 = PostgresSchema.getTypeOrmEntity(DeepEntity, 6);
+        const TypeOrmEntitySchemaAtDepth6 = PostgresSchema.extract(DeepEntity, 6);
         expect(TypeOrmEntitySchemaAtDepth6.options.name).toBe('EmptyEntity');
         expect(TypeOrmEntitySchemaAtDepth6.options.columns).toEqual({});
     });
 
     it('should handle inheritance correctly', () => {
-        const baseSchema = PostgresSchema.getTypeOrmEntity(BaseInheritanceEntity);
+        const baseSchema = PostgresSchema.extract(BaseInheritanceEntity);
         expect(baseSchema.options.name).toBe('BaseInheritanceEntity');
         expect(baseSchema.options.target).toBe(BaseInheritanceEntity);
         expect(baseSchema.options.columns.id).toBeDefined();
@@ -168,7 +168,7 @@ describe('PostgresSchema', () => {
         expect(baseSchema.options.columns.baseOptionalProperty.type).toBe(Number);
         expect(baseSchema.options.columns.baseOptionalProperty.nullable).toBe(true);
 
-        const derivedSchema = PostgresSchema.getTypeOrmEntity(DerivedInheritanceEntity);
+        const derivedSchema = PostgresSchema.extract(DerivedInheritanceEntity);
         expect(derivedSchema.options.name).toBe('DerivedInheritanceEntity');
         expect(derivedSchema.options.target).toBe(DerivedInheritanceEntity);
         expect(derivedSchema.options.columns.id).toBeDefined();
@@ -188,7 +188,7 @@ describe('PostgresSchema', () => {
     });
 
     it('should correctly extract schema for ComplexUserEntity with nested types', () => {
-        const TypeOrmEntitySchema = PostgresSchema.getTypeOrmEntity(ComplexUserEntity);
+        const TypeOrmEntitySchema = PostgresSchema.extract(ComplexUserEntity);
         expect(TypeOrmEntitySchema.options.name).toBe('ComplexUserEntity');
         expect(TypeOrmEntitySchema.options.target).toBe(ComplexUserEntity);
 
@@ -247,7 +247,7 @@ describe('PostgresSchema', () => {
     });
 
     it('should correctly extract schema for PostEntity with embedded comments and tags', () => {
-        const TypeOrmEntitySchema = PostgresSchema.getTypeOrmEntity(PostEntity);
+        const TypeOrmEntitySchema = PostgresSchema.extract(PostEntity);
         expect(TypeOrmEntitySchema.options.name).toBe('PostEntity');
         expect(TypeOrmEntitySchema.options.target).toBe(PostEntity);
 

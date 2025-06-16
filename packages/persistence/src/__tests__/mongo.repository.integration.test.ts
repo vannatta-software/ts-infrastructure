@@ -3,14 +3,14 @@ import { BasicEntity, BasicEmbeddedValueObject, BasicEnum, BasicNumericEnum } fr
 import { MongoRepository } from '../mongo/mongo.repository';
 import mongoose, { Model } from 'mongoose';
 import { describe, it, expect, beforeAll } from 'vitest';
-import { Mongo } from '../mongo/mongo.schema';
+import { MongoSchema } from '../mongo/mongo.schema';
 
 describe('MongoRepository Integration Tests with BasicEntity', () => {
     let basicEntityRepository: MongoRepository<BasicEntity>;
     let BasicEntityModel: Model<BasicEntity>;
 
     beforeAll(() => {
-        const basicEntitySchema = Mongo.Schema(BasicEntity);
+        const basicEntitySchema = MongoSchema.extract(BasicEntity);
 
         BasicEntityModel = mongoose.model<BasicEntity>('BasicEntity', basicEntitySchema);
         

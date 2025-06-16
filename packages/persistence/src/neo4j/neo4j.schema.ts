@@ -48,7 +48,7 @@ export interface INeo4jSchemaDefinition {
 }
 
 export class Neo4jSchema {
-    public static extractSchema(target: Function): INeo4jSchemaDefinition {
+    public static extract(target: Function): INeo4jSchemaDefinition {
         const nodeSchema: INeo4jNodeSchema = {
             label: target.name, // Node label is the class name
             properties: {},

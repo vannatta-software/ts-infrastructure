@@ -6,7 +6,7 @@ import { DOMAIN_PRIMITIVE_TYPE_MAP } from '../schema/domain-type-mappings';
 import 'reflect-metadata';
 
 export class PostgresSchema {
-    public static getTypeOrmEntity(entityClass: any, depth: number = 0): EntitySchema<any> {
+    public static extract(entityClass: any, depth: number = 0): EntitySchema<any> {
         if (!entityClass || depth > 5) {
             return new EntitySchema({
                 name: 'EmptyEntity', // Always return 'EmptyEntity' name when depth limit is reached

@@ -18,7 +18,7 @@ export class PostgresRepository<T extends Entity> implements IRepository<T> {
         logger: ILogger
     ) {
         this.logger = logger;
-        const typeOrmEntity = PostgresSchema.getTypeOrmEntity(entityClass);
+        const typeOrmEntity = PostgresSchema.extract(entityClass);
         this.typeOrmRepository = this.dataSource.getRepository(typeOrmEntity);
     }
 

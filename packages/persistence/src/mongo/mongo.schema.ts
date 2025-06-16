@@ -33,8 +33,8 @@ function getEnumerationClassValues(enumClass: any): (string | number)[] {
 }
 
 
-export class Mongo {
-    public static Schema(targetClass: any, depth = 0): Schema {
+export class MongoSchema {
+    public static extract(targetClass: any, depth = 0): Schema {
         if (!targetClass || depth > 5) return new Schema({}, { _id: false });
         
         const schema: ISchema = {};
@@ -73,7 +73,7 @@ export class Mongo {
             // Pre-process options.type for arrays containing ValueObjects or Entities
             // This ensures Mongoose sees [SchemaInstance] directly for embedded object arrays
             if (Array.isArray(options.type) && typeof options.type[0] === 'function' && (options.type[0].prototype instanceof ValueObject || options.type[0].prototype instanceof Entity)) {
-                options.type = [Mongo.Schema(options.type[0], depth + 1)];
+                options.type = [MongoSchema.extract(options.type[0], depth + 1)];
             }
 
             // Handle Relationship properties
@@ -142,7 +142,7 @@ export class Mongo {
             }
             // 4. Handle Embedded Objects/Single Entities
             else if (typeof options.type === 'function' && (options.type.prototype instanceof ValueObject || options.type.prototype instanceof Entity)) { // Single embedded entity
-                typeDefinition = Mongo.Schema(options.type, depth + 1);
+                typeDefinition = MongoSchema.extract(options.type, depth + 1);
                 isHandledByInference = true;
             }
 
@@ -196,7 +196,7 @@ export class Mongo {
         return new Schema(schema, schemaOptions);
     }
 
-    public static extractSchema(schema: Schema): ISchema {
+    public static extractProperties(schema: Schema): ISchema {
         if (!schema || !schema.obj) return {};
 
         let result: ISchema = {};
@@ -206,7 +206,7 @@ export class Mongo {
             const value = entry[1];
 
             if (isSchema(value)) {
-                result[key] = Mongo.extractSchema(value as Schema);
+                result[key] = MongoSchema.extractProperties(value as Schema);
                 return;
             }
 
