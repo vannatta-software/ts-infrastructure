@@ -1,4 +1,4 @@
-type Constructor<T> = new (...args: any[]) => T;
+export type Constructor<T> = new (...args: any[]) => T;
 
 /**
  * Interface for options that can be passed to the @DatabaseSchema decorator.

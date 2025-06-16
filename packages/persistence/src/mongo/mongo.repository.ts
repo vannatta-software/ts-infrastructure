@@ -31,25 +31,23 @@ export class MongoRepository<T extends Entity> implements IRepository<T> {
     }
 
     async insert(entity: T): Promise<void> {
-        const uniqueProperties = getUniqueProperties(entity.constructor);
-        if (uniqueProperties.length > 0) {
-            const uniqueQuery: Record<string, any> = {};
-            for (const prop of uniqueProperties) {
-                uniqueQuery[prop] = (entity as any)[prop];
-            }
-
-            const existingDoc = await this.model.findOne(uniqueQuery).exec();
-            if (existingDoc) {
+        const docToSave = { ...entity.document, _id: entity.id.value }; // Reverted to entity.document as per user's instruction
+        console.log('Doc to save:', docToSave); // Added console.log
+        const newDoc = new this.model(docToSave);
+        
+        try {
+            await newDoc.save();
+        } catch (error: any) {
+            console.log('Error caught in insert:', error); // Added console.log
+            // Catch Mongoose unique index error (code 11000) and re-throw as ApiException
+            if (error.code === 11000) {
                 throw new ApiException(
-                    `Entity with unique properties ${JSON.stringify(uniqueQuery)} already exists.`,
-                    { code: ['UNIQUE_CONSTRAINT_VIOLATION'] }
+                    `Entity with unique properties already exists.`,
+                    { code: ['UNIQUE_CONSTRAINT_VIOLATION'], details: error.message }
                 );
             }
+            throw error; // Re-throw other errors
         }
-
-        const docToSave = { ...entity.document, _id: entity.id.value };
-        const newDoc = new this.model(docToSave);
-        await newDoc.save();
 
         console.log('New document saved:', newDoc);
         entity.create(); // Call create lifecycle hook after successful save
@@ -60,38 +58,23 @@ export class MongoRepository<T extends Entity> implements IRepository<T> {
 
     async update(entity: T): Promise<void> {
         const id = entity.id.value;
-        const doc = entity.document;
+        const doc = entity.document; // Reverted to entity.document as per user's instruction
 
         if (!await this.model.exists({ _id: id })) {
             throw new ApiException(`Entity with ID ${id} not found for update.`, { code: ['ENTITY_NOT_FOUND'] });
         }
 
-        const uniqueProperties = getUniqueProperties(entity.constructor);
-        if (uniqueProperties.length > 0) {
-            const uniqueQuery: Record<string, any> = {};
-            for (const prop of uniqueProperties) {
-                uniqueQuery[prop] = (entity as any)[prop];
-            }
-            // Exclude the current entity by its ID
-            uniqueQuery['_id'] = { $ne: id };
-
-            const existingDoc = await this.model.findOne(uniqueQuery).exec();
-            if (existingDoc) {
-                throw new ApiException(
-                    `Entity with unique properties ${JSON.stringify(uniqueQuery)} already exists.`,
-                    { code: ['UNIQUE_CONSTRAINT_VIOLATION'] }
-                );
-            }
-        }
-
-        await this.model.findByIdAndUpdate(id, doc, { new: true }).exec();
+        // Removed manual unique property check, relying on Mongoose for unique constraints
+        await this.model.findByIdAndUpdate(id, doc, { new: true, runValidators: true }).exec();
         if (this.mediator) {
             this.mediator.publishEvents(entity);
         }
     }
 
     async delete(entity: T): Promise<void> {
+        console.log('Deleting entity with ID:', entity.id.value); // Added console.log
         const result = await this.model.findByIdAndDelete(entity.id.value).exec();
+        console.log('Result of findByIdAndDelete:', result); // Added console.log
         if (!result) {
             throw new ApiException(`Entity with ID ${entity.id.value} not found for deletion.`, { code: ['ENTITY_NOT_FOUND'] });
         }
@@ -102,7 +85,9 @@ export class MongoRepository<T extends Entity> implements IRepository<T> {
     }
 
     async search(queryObject: Record<string, any>): Promise<T[]> {
+        console.log('Search query object (in repo):', queryObject); // Added console.log
         const docs = await this.model.find(queryObject).exec();
+        console.log('Raw docs from find:', docs); // Added console.log
         return docs.map(doc => this.hydrate(doc));
     }
 

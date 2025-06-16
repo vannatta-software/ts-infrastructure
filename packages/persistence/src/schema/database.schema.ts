@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { IPropertySchemaOptions, IPropertySchemaMetadata, IRelationshipPropertyOptions } from './schema.interfaces';
+import { Constructor, IPropertySchemaOptions, IPropertySchemaMetadata, IRelationshipPropertyOptions } from './schema.interfaces';
 import { getDomainSchemaMetadata } from './domain-type-mappings'; // Import the helper
 
 /**
@@ -57,6 +57,51 @@ export function DatabaseEntity(): ClassDecorator {
         // No specific metadata needed here for now, but can be extended later
         // For example, to define collection/table names, or global schema options.
     };
+}
+
+/**
+ * Defines a prescriptive schema for a given class.
+ * This function allows users to define schema properties as a plain object,
+ * which then gets registered using the same metadata reflection mechanism
+ * as the @DatabaseSchema and @RelationshipProperty decorators.
+ *
+ * @param target The class constructor for which the schema is being defined.
+ * @param schemaDefinition A plain object where keys are property names and values are schema options.
+ */
+export function defineSchema<T>(
+    target: Constructor<T>,
+    schemaDefinition: {
+        [key: string]: IPropertySchemaOptions & { relationship?: IRelationshipPropertyOptions };
+    }
+): void {
+    const properties: IPropertySchemaMetadata[] = [];
+
+    for (const propertyKey in schemaDefinition) {
+        if (Object.prototype.hasOwnProperty.call(schemaDefinition, propertyKey)) {
+            const options = schemaDefinition[propertyKey];
+            properties.push({
+                propertyKey,
+                ...options,
+            });
+        }
+    }
+
+    // Get existing metadata for this specific class to merge with,
+    // in case defineSchema is called multiple times or decorators are also used.
+    const existingProperties: IPropertySchemaMetadata[] = Reflect.getOwnMetadata(DatabaseSchemaMetadataKey, target) || [];
+    const mergedPropertiesMap = new Map<string, IPropertySchemaMetadata>();
+
+    // Add existing properties first
+    for (const prop of existingProperties) {
+        mergedPropertiesMap.set(String(prop.propertyKey), prop);
+    }
+
+    // Add new properties, overriding existing ones if keys conflict
+    for (const prop of properties) {
+        mergedPropertiesMap.set(String(prop.propertyKey), { ...mergedPropertiesMap.get(String(prop.propertyKey)), ...prop });
+    }
+
+    Reflect.defineMetadata(DatabaseSchemaMetadataKey, Array.from(mergedPropertiesMap.values()), target);
 }
 
 /**

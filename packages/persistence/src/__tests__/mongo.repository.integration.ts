@@ -89,7 +89,10 @@ describe('MongoRepository Integration Tests with BasicEntity', () => {
             await basicEntityRepository.insert(entity1);
             await basicEntityRepository.insert(entity2);
 
+            console.log('Search query object:', { name: 'Search 1' });
             const foundEntities = await basicEntityRepository.search({ name: 'Search 1' });
+            console.log('Found entities:', foundEntities);
+
             expect(foundEntities.length).toBe(1);
             expect(foundEntities[0].name).toBe('Search 1');
         });

@@ -4,16 +4,13 @@ import { Mediator, ILogger, ApiException } from '@vannatta-software/ts-utils-ser
 import { Driver, Session, auth, driver } from 'neo4j-driver';
 
 export class Neo4jRepository<T extends Entity> {
-    protected readonly logger: ILogger;
     private driver: Driver;
     private hydrateFn: ((record: any) => T) | undefined;
 
     constructor(
-        private readonly mediator: Mediator,
         private readonly entityClass: new (...args: any[]) => T,
-        logger: ILogger
+        private readonly mediator?: Mediator,
     ) {
-        this.logger = logger;
         this.driver = driver(
             process.env.NEO4J_URI || 'bolt://localhost:7687',
             auth.basic(
@@ -58,7 +55,7 @@ export class Neo4jRepository<T extends Entity> {
             const query = `CREATE (n:${nodeLabels} $properties) RETURN n`;
             await session.run(query, { properties });
             entity.create();
-            this.mediator.publishEvents(entity);
+            this.mediator?.publishEvents(entity);
         } finally {
             await session.close();
         }
