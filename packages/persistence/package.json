@@ -8,7 +8,7 @@
         "test": "vitest",
         "mongo:test:up": "docker-compose -f docker-compose.test.yml up -d mongodb_test",
         "mongo:test:down": "docker-compose -f docker-compose.test.yml down -v",
-        "test:integration:mongo": "npm run mongo:test:up && vitest run --config vitest.integration.config.ts --testTimeout 60000 && npm run mongo:test:down"
+        "test:mongo": "npm run mongo:test:up && vitest run --config mongo.integration.config.ts --testTimeout 60000 && npm run mongo:test:down"
     },
     "dependencies": {
         "@vannatta-software/ts-utils-core": "^2.5.5",
