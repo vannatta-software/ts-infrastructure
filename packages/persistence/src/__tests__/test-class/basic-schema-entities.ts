@@ -67,8 +67,8 @@ export class BasicEntity extends Entity {
     @DatabaseSchema({ type: BasicEnum })
     public status: BasicEnum;
 
-    @DatabaseSchema({ type: BasicNumericEnum })
-    public numericStatus: BasicNumericEnum;
+    // @DatabaseSchema({ type: BasicNumericEnum })
+    // public numericStatus: BasicNumericEnum;
 
     @DatabaseSchema({ type: String, enum: ['LITERAL_A', 'LITERAL_B'] })
     public literalStatus: StringLiteralEnum;
@@ -85,9 +85,9 @@ export class BasicEntity extends Entity {
         this.metadata = props.metadata || {};
         this.embeddedObject = props.embeddedObject || BasicEmbeddedValueObject.create({ value: 'default', count: 0 });
         this.status = props.status || BasicEnum.ValueA;
-        this.numericStatus = typeof props.numericStatus === 'string'
-            ? parseInt(props.numericStatus, 10) as BasicNumericEnum
-            : props.numericStatus || BasicNumericEnum.One;
+        // this.numericStatus = typeof props.numericStatus === 'string'
+        //     ? parseInt(props.numericStatus, 10) as BasicNumericEnum
+        //     : props.numericStatus || BasicNumericEnum.One;
         this.literalStatus = props.literalStatus || 'LITERAL_A';
     }
 

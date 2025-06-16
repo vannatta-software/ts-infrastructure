@@ -17,6 +17,7 @@ export class PostgresSchema {
 
         const schemaMetadataMap = getDatabaseSchemaMetadata(entityClass);
         const columns: { [key: string]: any } = {};
+        const relations: { [key: string]: any } = {}; // Initialize relations object
 
         // Base Entity properties (id, createdAt, updatedAt) are handled by their respective @DatabaseSchema decorators
         // and the general property processing loop below.
@@ -31,9 +32,51 @@ export class PostgresSchema {
         Array.from(schemaMetadataMap.values()).flat().forEach((metadata: IPropertySchemaMetadata) => {
             const key = metadata.propertyKey as string;
 
-            // Skip relationship properties as they are not direct columns in TypeORM for Postgres
+            // Handle relationship properties
             if (metadata.relationship) {
-                return;
+                const relationOptions: any = {
+                    target: metadata.relationship.target,
+                    inverseSide: metadata.relationship.inverse,
+                    cascade: metadata.relationship.cascade,
+                    eager: metadata.relationship.eager,
+                };
+
+                switch (metadata.relationship.cardinality) {
+                    case 'one-to-one':
+                        relationOptions.type = 'one-to-one';
+                        if (metadata.relationship.owner) {
+                            relationOptions.joinColumn = metadata.relationship.columns ? { name: metadata.relationship.columns[0] } : true;
+                        }
+                        break;
+                    case 'one-to-many':
+                        relationOptions.type = 'one-to-many';
+                        break;
+                    case 'many-to-one':
+                        relationOptions.type = 'many-to-one';
+                        if (metadata.relationship.owner) { // ManyToOne is always the owning side in TypeORM
+                            relationOptions.joinColumn = metadata.relationship.columns ? { name: metadata.relationship.columns[0] } : true;
+                        }
+                        break;
+                    case 'many-to-many':
+                        relationOptions.type = 'many-to-many';
+                        if (metadata.relationship.owner) {
+                            relationOptions.joinTable = metadata.relationship.table ? { name: metadata.relationship.table } : true;
+                            if (metadata.relationship.columns && metadata.relationship.columns.length >= 2) {
+                                relationOptions.joinTable = {
+                                    ...relationOptions.joinTable,
+                                    joinColumn: { name: metadata.relationship.columns[0] },
+                                    inverseJoinColumn: { name: metadata.relationship.columns[1] },
+                                };
+                            }
+                        }
+                        break;
+                    default:
+                        // If cardinality is not specified or unknown, skip or log a warning
+                        console.warn(`Unknown or unspecified cardinality for relationship property '${key}'. Skipping relation generation.`);
+                        return; // Skip this property if cardinality is not handled
+                }
+                relations[key] = relationOptions;
+                return; // Skip column processing for relationship properties
             }
 
             let columnType: any;
@@ -92,8 +135,9 @@ export class PostgresSchema {
             if (metadata.enum) {
                 columnOptions.enum = metadata.enum;
             }
-            if (metadata.isIdentifier) { // Add this to correctly set primary key from decorator
+            if (metadata.isIdentifier) {
                 columnOptions.primary = true;
+                columnOptions.unique = true; // UniqueIdentifier properties are inherently unique
             }
 
             columnOptions.type = columnType;
@@ -106,13 +150,16 @@ export class PostgresSchema {
                 columnOptions.default = metadata.default;
             }
 
-            columns[key] = columnOptions;
+            // If the property is an identifier and its key is '_id', map it to 'id' for TypeORM
+            const finalKey = (metadata.isIdentifier && key === '_id') ? 'id' : key;
+            columns[finalKey] = columnOptions;
         });
 
         const entitySchema = new EntitySchema({
             name: entityClass.name,
             target: entityClass,
             columns: columns,
+            relations: relations, // Pass relations to EntitySchema
         });
         return entitySchema;
     }

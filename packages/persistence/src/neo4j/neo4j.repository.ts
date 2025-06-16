@@ -54,7 +54,7 @@ export class Neo4jRepository<T extends Entity> {
             }
 
             const nodeLabels = labels && labels.length > 0 ? labels.map(l => `\`${l}\``).join(':') : this.entityClass.name;
-            const properties = Neo4jSchema.extractProperties(entity);
+            const properties = Neo4jSchema.extractSchema(entity.constructor);
             const query = `CREATE (n:${nodeLabels} $properties) RETURN n`;
             await session.run(query, { properties });
             entity.create();
@@ -91,7 +91,7 @@ export class Neo4jRepository<T extends Entity> {
                 }
             }
 
-            const properties = Neo4jSchema.extractProperties(entity);
+            const properties = Neo4jSchema.extractSchema(entity.constructor);
             const query = `MATCH (n {id: $id}) SET n = $properties RETURN n`;
             await session.run(query, { id: entity.id.value, properties });
             this.mediator.publishEvents(entity);

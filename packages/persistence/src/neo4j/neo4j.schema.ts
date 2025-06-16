@@ -97,13 +97,26 @@ export class Neo4jSchema {
                         neo4jType = 'any[]'; // Fallback for unknown array item types
                     }
                 }
-            } else if (typeof propertyOptions.type === 'object' && propertyOptions.type !== null && Object.values(propertyOptions.type).some(val => typeof val === 'string' || typeof val === 'number')) {
-                // Handle standard TypeScript enums (which are objects at runtime)
-                // Determine if it's a string enum or numeric enum
-                const enumValues = Object.values(propertyOptions.type).filter(value => typeof value === 'string' || typeof value === 'number') as (string | number)[];
-                neo4jType = enumValues.some(val => typeof val === 'number') ? 'number' : 'string';
-                // Directly assign enum values from the object
-                propertyOptions.enum = enumValues;
+            } else if (typeof propertyOptions.type === 'object' && propertyOptions.type !== null && !Array.isArray(propertyOptions.type) && !(propertyOptions.type.prototype instanceof ValueObject) && !(propertyOptions.type.prototype instanceof Entity)) {
+                // Handle standard TypeScript enums (which are objects at runtime, but not arrays, ValueObjects, or Entities)
+                const enumValues = Object.values(propertyOptions.type); // Get all values, including reverse mappings for numeric enums
+
+                if (enumValues.length > 0) {
+                    const hasNumericValues = enumValues.some(value => typeof value === 'number');
+                    const hasStringValues = enumValues.some(value => typeof value === 'string');
+
+                    let enumType = 'string'; // Default to string
+                    if (hasNumericValues && !hasStringValues) {
+                        enumType = 'number'; // Pure numeric enum
+                    } else if (hasNumericValues && hasStringValues) {
+                        // Mixed enum (numeric enum with reverse mappings) - Neo4j stores actual values
+                        enumType = 'number'; // Assume number if actual values are numbers
+                    }
+                    neo4jType = enumType;
+                    propertyOptions.enum = enumValues as (string | number)[]; // Assign all values
+                } else {
+                    neo4jType = 'any'; // Fallback if no enum values found
+                }
             } else if (propertyOptions.type === Object) { // Explicitly handle Object type
                 neo4jType = 'object';
             }
@@ -131,12 +144,12 @@ export class Neo4jSchema {
             // --- Process Relationship Properties (if applicable) ---
             if (propMetadata.relationship) {
                 const relOptions: IRelationshipPropertyOptions = propMetadata.relationship;
-                const relationshipKey = `${target.name}-${relOptions.type}-${relOptions.target.name}`; // Create a unique key for the relationship
+                const relationshipKey = `${target.name}-${relOptions.type}-${(relOptions.target as Function)().name}`; // Create a unique key for the relationship
 
                 if (!seenRelationships.has(relationshipKey)) {
                     relationships.push({
                         sourceLabel: target.name,
-                        targetLabel: relOptions.target.name,
+                        targetLabel: (relOptions.target as Function)().name, // Call the lazy reference function
                         type: relOptions.type,
                         edgeProperties: relOptions.properties || [],
                         direction: relOptions.direction || 'OUTGOING',
@@ -150,21 +163,32 @@ export class Neo4jSchema {
         const identifierProp = metadata.find(p => p.isIdentifier);
         if (identifierProp) {
             const identifierKey = String(identifierProp.propertyKey);
-            nodeSchema.properties[identifierKey] = {
-                ...nodeSchema.properties[identifierKey],
-                isIdentifier: true,
-                unique: true, // Identifiers are typically unique
-            };
+            // If the domain identifier is '_id' but Neo4j convention is 'id'
+            if (identifierKey === '_id') {
+                nodeSchema.properties['id'] = {
+                    type: 'string', // Assuming UniqueIdentifier maps to string
+                    isIdentifier: true,
+                    unique: true,
+                    optional: false,
+                    default: nodeSchema.properties[identifierKey]?.default, // Copy default if exists
+                };
+                delete nodeSchema.properties[identifierKey]; // Remove the _id property
+            } else {
+                // For other explicit identifiers
+                nodeSchema.properties[identifierKey] = {
+                    ...nodeSchema.properties[identifierKey],
+                    isIdentifier: true,
+                    unique: true,
+                };
+            }
         } else {
             // Fallback for entities without explicit @DatabaseSchema(isIdentifier: true)
-            // Assume 'id' or '_id' if present and not explicitly handled
+            // Assume 'id' if present
             if (nodeSchema.properties['id']) {
                 nodeSchema.properties['id'].isIdentifier = true;
                 nodeSchema.properties['id'].unique = true;
-            } else if (nodeSchema.properties['_id']) {
-                nodeSchema.properties['_id'].isIdentifier = true;
-                nodeSchema.properties['_id'].unique = true;
             }
+            // No need to check for '_id' here if we're mapping it to 'id' above.
         }
 
         return {

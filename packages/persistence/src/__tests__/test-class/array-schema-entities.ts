@@ -25,8 +25,8 @@ export class ArrayEntity extends Entity {
         this.id = props.id || UniqueIdentifier.generate();
         this.stringArray = props.stringArray || [];
         this.numberArray = props.numberArray || [];
-        this.uniqueIdentifierArray = props.uniqueIdentifierArray || [];
-        this.embeddedObjectArray = props.embeddedObjectArray || [];
+        this.uniqueIdentifierArray = props.uniqueIdentifierArray.map(id => UniqueIdentifier.parse(id)) || [];    
+        this.embeddedObjectArray = props.embeddedObjectArray.map(o => new BasicEmbeddedValueObject(o)) || [];
     }
 
     public create(): void {
