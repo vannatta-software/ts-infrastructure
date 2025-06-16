@@ -15,5 +15,22 @@ services:
       interval: 5s
       timeout: 2s
       retries: 10
+
+  neo4j_test:
+    image: neo4j:latest
+    container_name: persistence_neo4j_test
+    ports:
+      - "7687:7687"
+    environment:
+      NEO4J_AUTH: neo4j/testpassword
+    volumes:
+      - neo4j_test_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "cypher-shell -u neo4j -p testpassword 'RETURN 1;'"]
+      interval: 5s
+      timeout: 2s
+      retries: 10
+
 volumes:
   mongodb_test_data:
+  neo4j_test_data:

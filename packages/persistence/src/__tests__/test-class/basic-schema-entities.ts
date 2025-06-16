@@ -55,7 +55,7 @@ export class BasicEntity extends Entity {
     @DatabaseSchema({ type: Date })
     public createdAt: Date;
 
-    @DatabaseSchema({ type: UniqueIdentifier })
+    @DatabaseSchema({ type: UniqueIdentifier, unique: true }) // Added unique: true
     public uniqueIdProperty: UniqueIdentifier;
 
     @DatabaseSchema({ type: Object })

@@ -1,24 +1,17 @@
 import { Entity, getUniqueProperties } from '@vannatta-software/ts-utils-domain';
 import { Neo4jSchema } from './neo4j.schema';
 import { Mediator, ILogger, ApiException } from '@vannatta-software/ts-utils-server';
-import { Driver, Session, auth, driver } from 'neo4j-driver';
+import { Driver, Session } from 'neo4j-driver'; // Removed auth, driver imports
+import { mapEntityToNeo4jProperties } from './neo4j.utils'; // Import the utility function
 
 export class Neo4jRepository<T extends Entity> {
-    private driver: Driver;
     private hydrateFn: ((record: any) => T) | undefined;
 
     constructor(
         private readonly entityClass: new (...args: any[]) => T,
+        private readonly driver: Driver, // Accept external Driver instance
         private readonly mediator?: Mediator,
-    ) {
-        this.driver = driver(
-            process.env.NEO4J_URI || 'bolt://localhost:7687',
-            auth.basic(
-                process.env.NEO4J_USERNAME || 'neo4j',
-                process.env.NEO4J_PASSWORD || 'password'
-            )
-        );
-    }
+    ) {}
 
     public onHydrate(hydrate: (record: any) => T) {
         this.hydrateFn = hydrate;
@@ -51,11 +44,12 @@ export class Neo4jRepository<T extends Entity> {
             }
 
             const nodeLabels = labels && labels.length > 0 ? labels.map(l => `\`${l}\``).join(':') : this.entityClass.name;
-            const properties = Neo4jSchema.extract(entity.constructor);
+            const properties = mapEntityToNeo4jProperties(entity); // Use the utility function
             const query = `CREATE (n:${nodeLabels} $properties) RETURN n`;
+            console.log(`[Neo4jRepository] createNode Query: ${query}, Properties: ${JSON.stringify(properties)}`);
             await session.run(query, { properties });
             entity.create();
-            this.mediator?.publishEvents(entity);
+            this.mediator?.publishEvents(entity); // Changed to optional chaining
         } finally {
             await session.close();
         }
@@ -64,6 +58,7 @@ export class Neo4jRepository<T extends Entity> {
     async updateNode(entity: T): Promise<void> {
         const session = await this.getSession();
         try {
+            console.log(`[Neo4jRepository] updateNode - Checking existing node for ID: ${entity.id.value}`);
             const existingNodeCheck = await session.run(`MATCH (n {id: $id}) RETURN n`, { id: entity.id.value });
             if (existingNodeCheck.records.length === 0) {
                 throw new ApiException(`Entity with ID ${entity.id.value} not found for update.`, { code: ['ENTITY_NOT_FOUND'] });
@@ -88,10 +83,11 @@ export class Neo4jRepository<T extends Entity> {
                 }
             }
 
-            const properties = Neo4jSchema.extract(entity.constructor);
+            const properties = mapEntityToNeo4jProperties(entity); // Use the utility function
             const query = `MATCH (n {id: $id}) SET n = $properties RETURN n`;
+            console.log(`[Neo4jRepository] updateNode Query: ${query}, ID: ${entity.id.value}, Properties: ${JSON.stringify(properties)}`);
             await session.run(query, { id: entity.id.value, properties });
-            this.mediator.publishEvents(entity);
+            this.mediator?.publishEvents(entity); // Changed to optional chaining
         } finally {
             await session.close();
         }
@@ -100,11 +96,14 @@ export class Neo4jRepository<T extends Entity> {
     async deleteNode(id: string): Promise<void> {
         const session = await this.getSession();
         try {
+            console.log(`[Neo4jRepository] deleteNode - Checking existing node for ID: ${id}`);
             const existingNode = await this.findNodeById(id);
             if (!existingNode) {
                 throw new ApiException(`Entity with ID ${id} not found for deletion.`, { code: ['ENTITY_NOT_FOUND'] });
             }
-            await session.run(`MATCH (n {id: $id}) DETACH DELETE n`, { id });
+            const query = `MATCH (n {id: $id}) DETACH DELETE n`;
+            console.log(`[Neo4jRepository] deleteNode Query: ${query}, ID: ${id}`);
+            await session.run(query, { id });
         } finally {
             await session.close();
         }
@@ -114,10 +113,14 @@ export class Neo4jRepository<T extends Entity> {
         const session = await this.getSession();
         try {
             const query = `MATCH (n {id: $id}) RETURN n`;
+            console.log(`[Neo4jRepository] findNodeById Query: ${query}, ID: ${id}`);
             const result = await session.run(query, { id });
             if (result.records.length > 0) {
-                return this.hydrate(result.records[0].get('n').properties);
+                const properties = result.records[0].get('n').properties;
+                console.log(`[Neo4jRepository] findNodeById - Found properties: ${JSON.stringify(properties)}`);
+                return this.hydrate(properties);
             }
+            console.log(`[Neo4jRepository] findNodeById - No node found for ID: ${id}`);
             return null;
         } finally {
             await session.close();
@@ -140,8 +143,15 @@ export class Neo4jRepository<T extends Entity> {
             }
 
             const query = `${matchClause} ${whereClause} RETURN n`;
+            console.log(`[Neo4jRepository] findNodes Query: ${query}, Params: ${JSON.stringify(params)}`);
             const result = await session.run(query, params);
-            return result.records.map(record => this.hydrate(record.get('n').properties));
+            const hydratedResults = result.records.map(record => {
+                const properties = record.get('n').properties;
+                console.log(`[Neo4jRepository] findNodes - Found properties: ${JSON.stringify(properties)}`);
+                return this.hydrate(properties);
+            });
+            console.log(`[Neo4jRepository] findNodes - Found ${hydratedResults.length} entities.`);
+            return hydratedResults;
         } finally {
             await session.close();
         }
