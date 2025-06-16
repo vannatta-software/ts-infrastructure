@@ -9,7 +9,7 @@ export class MongoRepository<T extends Entity> implements IRepository<T> {
 
     constructor(
         protected model: Model<T>,
-        private mediator: Mediator
+        private mediator?: Mediator // Make optional
     ) {}
 
     public onHydrate(hydrate: (document: any) => T) {
@@ -23,6 +23,9 @@ export class MongoRepository<T extends Entity> implements IRepository<T> {
 
     async findById(id: string): Promise<T | null> {
         const doc = await this.model.findById(id).exec();
+
+        console.log('findById called with id:', id);
+        console.log('Document found:', doc);
 
         return doc ? this.hydrate(doc) : null;
     }
@@ -44,10 +47,15 @@ export class MongoRepository<T extends Entity> implements IRepository<T> {
             }
         }
 
-        const newDoc = new this.model(entity.document);
+        const docToSave = { ...entity.document, _id: entity.id.value };
+        const newDoc = new this.model(docToSave);
         await newDoc.save();
+
+        console.log('New document saved:', newDoc);
         entity.create(); // Call create lifecycle hook after successful save
-        this.mediator.publishEvents(entity);
+        if (this.mediator) {
+            this.mediator.publishEvents(entity);
+        }
     }
 
     async update(entity: T): Promise<void> {
@@ -77,7 +85,9 @@ export class MongoRepository<T extends Entity> implements IRepository<T> {
         }
 
         await this.model.findByIdAndUpdate(id, doc, { new: true }).exec();
-        this.mediator.publishEvents(entity);
+        if (this.mediator) {
+            this.mediator.publishEvents(entity);
+        }
     }
 
     async delete(entity: T): Promise<void> {
@@ -86,7 +96,9 @@ export class MongoRepository<T extends Entity> implements IRepository<T> {
             throw new ApiException(`Entity with ID ${entity.id.value} not found for deletion.`, { code: ['ENTITY_NOT_FOUND'] });
         }
         entity.delete(); // Call delete lifecycle hook after successful deletion
-        this.mediator.publishEvents(entity);
+        if (this.mediator) {
+            this.mediator.publishEvents(entity);
+        }
     }
 
     async search(queryObject: Record<string, any>): Promise<T[]> {

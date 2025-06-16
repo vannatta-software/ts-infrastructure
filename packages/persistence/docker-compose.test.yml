@@ -1,0 +1,19 @@
+version: '3.8'
+services:
+  mongodb_test:
+    image: mongo:latest
+    container_name: persistence_mongo_test
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: testuser
+      MONGO_INITDB_ROOT_PASSWORD: testpassword
+    volumes:
+      - mongodb_test_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 2s
+      retries: 10
+volumes:
+  mongodb_test_data:

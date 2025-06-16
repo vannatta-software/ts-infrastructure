@@ -43,9 +43,6 @@ export class BasicEmbeddedValueObject extends ValueObject {
 // BasicEntity: A single entity to test all basic property types
 @DatabaseEntity()
 export class BasicEntity extends Entity {
-    @DatabaseSchema({ type: UniqueIdentifier, unique: true, isIdentifier: true })
-    public id: UniqueIdentifier;
-
     @DatabaseSchema({ type: String })
     public name: string;
 
@@ -78,22 +75,20 @@ export class BasicEntity extends Entity {
 
     constructor(props: Partial<BasicEntity>) {
         super(props);
-        this.id = props.id || UniqueIdentifier.generate();
+
         this.name = props.name || 'Default Name';
         this.age = props.age;
         this.isActive = props.isActive ?? false;
-        this.createdAt = props.createdAt || new Date();
-        this.uniqueIdProperty = props.uniqueIdProperty || UniqueIdentifier.generate();
+        this.uniqueIdProperty = props.uniqueIdProperty ?
+             UniqueIdentifier.parse(props.uniqueIdProperty) :
+             UniqueIdentifier.generate();
         this.metadata = props.metadata || {};
         this.embeddedObject = props.embeddedObject || BasicEmbeddedValueObject.create({ value: 'default', count: 0 });
         this.status = props.status || BasicEnum.ValueA;
-        this.numericStatus = props.numericStatus || BasicNumericEnum.One;
+        this.numericStatus = typeof props.numericStatus === 'string'
+            ? parseInt(props.numericStatus, 10) as BasicNumericEnum
+            : props.numericStatus || BasicNumericEnum.One;
         this.literalStatus = props.literalStatus || 'LITERAL_A';
-    }
-
-    // Static factory method
-    public static create(props: Partial<BasicEntity>): BasicEntity {
-        return new BasicEntity(props);
     }
 
     // Instance method to satisfy abstract Entity.create()

@@ -34,7 +34,7 @@ describe('Mongo.Schema', () => {
                 metadata: { type: Object },
                 embeddedObject: expect.any(Schema),
                 status: { type: 'String', enum: Object.values(BasicEnum) }, // Changed type to 'String'
-                numericStatus: { type: 'String', enum: Object.values(BasicNumericEnum) }, // Changed type to 'String'
+                numericStatus: { type: Number, enum: Object.values(BasicNumericEnum) },
                 literalStatus: { type: String, enum: ['LITERAL_A', 'LITERAL_B'] },
             })
         );

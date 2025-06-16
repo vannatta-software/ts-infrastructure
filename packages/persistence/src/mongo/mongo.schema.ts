@@ -1,6 +1,5 @@
 import { Schema } from 'mongoose';
 import 'reflect-metadata';
-import { v4 as uuid } from "uuid";
 import { UniqueIdentifier, Entity, Enumeration, ValueObject } from '@vannatta-software/ts-utils-domain'; // Import base domain types
 import {
     getDatabaseSchemaMetadata, DatabaseEntity
@@ -82,9 +81,16 @@ export class Mongo {
                 isHandledByInference = true;
             }
             // 2. Handle standard TypeScript enums (which are objects at runtime)
-            else if (typeof options.type === 'object' && options.type !== null && Object.values(options.type).some(val => typeof val === 'string' || typeof val === 'number')) {
-                typeDefinition = { type: 'String', enum: Object.values(options.type).filter(value => typeof value === 'string' || typeof value === 'number') };
-                isHandledByInference = true;
+            else if (typeof options.type === 'object' && options.type !== null) {
+                const enumValues = Object.values(options.type).filter(value => typeof value === 'string' || typeof value === 'number');
+                if (enumValues.length > 0) {
+                    const isNumericEnum = enumValues.every(value => typeof value === 'number');
+                    typeDefinition = {
+                        type: isNumericEnum ? Number : String,
+                        enum: enumValues
+                    };
+                    isHandledByInference = true;
+                }
             }
             // 3. Handle Embedded Objects/Arrays of Embedded Objects
             else if (typeof options.type === 'function' && (options.type.prototype instanceof ValueObject || options.type.prototype instanceof Entity)) { // Single embedded entity

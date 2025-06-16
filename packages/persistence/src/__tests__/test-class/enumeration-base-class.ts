@@ -19,8 +19,4 @@ export class MyEnumeration extends Enumeration {
         this.name = name;
         this.id = id;
     }
-
-    public static create(name: string, id: number): MyEnumeration {
-        return new MyEnumeration(name, id);
-    }
 }

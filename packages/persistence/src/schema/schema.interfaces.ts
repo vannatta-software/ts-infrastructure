@@ -5,6 +5,7 @@ type Constructor<T> = new (...args: any[]) => T;
  * These options define how a property should be mapped in a database schema.
  */
 export interface IPropertySchemaOptions {
+    isDomainAbstraction?: boolean; // True if this property is part of a domain abstraction (e.g., Entity, ValueObject, Enumeration)
     /**
      * The constructor function for the property's type (e.g., String, Number, Date, or another @DatabaseEntity decorated class).
      */

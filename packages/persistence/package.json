@@ -5,20 +5,24 @@
     "types": "dist/index.d.ts",
     "scripts": {
         "build": "tsc",
-        "test": "vitest"
+        "test": "vitest",
+        "mongo:test:up": "docker-compose -f docker-compose.test.yml up -d mongodb_test",
+        "mongo:test:down": "docker-compose -f docker-compose.test.yml down -v",
+        "test:integration:mongo": "npm run mongo:test:up && vitest run --config vitest.integration.config.ts --testTimeout 60000 && npm run mongo:test:down"
     },
     "dependencies": {
-        "@vannatta-software/ts-utils-core": "^2.5.1",
-        "@vannatta-software/ts-utils-domain": "^2.5.1",
-        "@vannatta-software/ts-utils-server": "^2.5.1",
-        "mongoose": "^8.0.0",
+        "@vannatta-software/ts-utils-core": "^2.5.5",
+        "@vannatta-software/ts-utils-domain": "^2.5.5",
+        "@vannatta-software/ts-utils-server": "^2.5.5",
         "neo4j-driver": "^5.0.0",
         "reflect-metadata": "^0.1.13",
         "typeorm": "^0.3.0"
     },
     "devDependencies": {
+        "@types/mongoose": "^5.11.96",
         "@vitest/coverage-v8": "^3.2.3",
         "happy-dom": "^18.0.1",
+        "mongoose": "^8.15.2",
         "vitest": "^3.2.3"
     },
     "publishConfig": {

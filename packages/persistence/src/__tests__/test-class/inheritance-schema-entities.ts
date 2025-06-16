@@ -57,10 +57,6 @@ export class DerivedInheritanceEntity extends BaseInheritanceEntity {
         this.derivedEmbedded = props.derivedEmbedded || BasicEmbeddedValueObject.create({ value: 'derived embedded' });
     }
 
-    public static create(props: Partial<DerivedInheritanceEntity>): DerivedInheritanceEntity {
-        return new DerivedInheritanceEntity(props);
-    }
-
     // No need to re-implement create() and delete() if they are already implemented in the base class
     // unless the derived class needs specific logic.
 }

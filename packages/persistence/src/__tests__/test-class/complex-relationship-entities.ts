@@ -78,10 +78,6 @@ export class ProductEntity extends Entity {
         this.price = props.price || 0;
     }
 
-    public static create(props: Partial<ProductEntity>): ProductEntity {
-        return new ProductEntity(props);
-    }
-
     public create(): void {
         // No-op for testing
     }
@@ -108,10 +104,6 @@ export class CommentEntity extends ValueObject {
         this.id = props.id || UniqueIdentifier.generate();
         this.text = props.text;
         this.author = props.author;
-    }
-
-    public static create(props: { id?: UniqueIdentifier; text: string; author: string }): CommentEntity {
-        return new CommentEntity(props);
     }
 
     public *getAtomicValues(): IterableIterator<any> {
@@ -146,10 +138,6 @@ export class PostEntity extends Entity {
         this.content = props.content || 'Default Content';
         this.comments = props.comments || [];
         this.tags = props.tags || [];
-    }
-
-    public static create(props: Partial<PostEntity>): PostEntity {
-        return new PostEntity(props);
     }
 
     public create(): void {
@@ -198,10 +186,6 @@ export class ComplexUserEntity extends Entity {
         this.profile = props.profile || UserProfileEntity.create({ bio: 'default bio' });
         this.orders = props.orders || [];
         this.likedProducts = props.likedProducts || [];
-    }
-
-    public static create(props: Partial<ComplexUserEntity>): ComplexUserEntity {
-        return new ComplexUserEntity(props);
     }
 
     public create(): void {

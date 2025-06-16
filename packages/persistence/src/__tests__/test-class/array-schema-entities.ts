@@ -29,10 +29,6 @@ export class ArrayEntity extends Entity {
         this.embeddedObjectArray = props.embeddedObjectArray || [];
     }
 
-    public static create(props: Partial<ArrayEntity>): ArrayEntity {
-        return new ArrayEntity(props);
-    }
-
     public create(): void {
         // No-op for testing
     }

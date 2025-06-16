@@ -20,10 +20,6 @@ export class DeepEntity extends Entity {
         this.child = props.child;
     }
 
-    public static create(props: Partial<DeepEntity>): DeepEntity {
-        return new DeepEntity(props);
-    }
-
     public create(): void {
         // No-op for testing
     }
